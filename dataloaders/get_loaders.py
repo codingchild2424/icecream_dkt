@@ -10,7 +10,7 @@ def get_loaders(config):
 
     num_q = dataset.num_q
 
-    train_size = int( len(dataset) * config.train_ration )
+    train_size = int( len(dataset) * config.train_ratio )
     test_size = len(dataset) - train_size
 
     train_dataset, test_dataset = random_split(

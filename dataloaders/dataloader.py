@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 
-DATASET_DIR = "../datasets/answer_data.csv"
+DATASET_DIR = "datasets/answer_data.csv"
 
 class Answerloader(Dataset):
     def __init__(self, dataset_dir = DATASET_DIR):
