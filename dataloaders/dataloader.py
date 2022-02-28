@@ -28,10 +28,14 @@ class Answerloader(Dataset):
         self.q_list: unique question list
         """
 
+        self.num_u = self.u_list.shape[0]
+        self.num_q = self.q_list.shape[0]
+
         self.len = len(self.q_seqs)
 
     def __getitem__(self, index):
-        return self.q_seqs[index], self.r_seqs[index], self.t_seqs[index]
+        return self.q_seqs[index], self.r_seqs[index] #self.t_seqs[index]
+        #일단 시간 데이터는 따로 가공해서 넣기
 
     def __len__(self):
         return self.len
