@@ -1,5 +1,6 @@
 
 from torch.nn import Module, Embedding, LSTM, Sequential, Linear, Sigmoid
+import torch
 
 class DKT(Module):
     #num_q: 유일한 질문의 갯수
@@ -27,7 +28,7 @@ class DKT(Module):
         ) 
         #100을 받아서 100이 나옴
         self.lstm_layer = LSTM( 
-            input_size = self.emb_size,
+            input_size = self.emb_size + 1, #time 때문에 추가
             hidden_size = self.hidden_size,
             batch_first = True,
             num_layers = self.n_layers,
@@ -39,7 +40,7 @@ class DKT(Module):
             Sigmoid()
         )
 
-    def forward(self, q_seqs, r_seqs):
+    def forward(self, q_seqs, r_seqs, t_seqs):
         #|q_seqs| = (bs, sq), |r_seqs| = (bs, sq)
 
         '''
@@ -56,7 +57,17 @@ class DKT(Module):
 
         interaction_emb = self.interaction_emb(x) #|interaction_emb| = (bs, sq, self.emb_size) -> 각각의 x에 해당하는 embedding값이 정해짐
 
-        z, _ = self.lstm_layer( interaction_emb ) #|z| = (bs, sq, self.hidden_size)
+        #emb 값에 학생별 시간의 표준편차 값을 붙이기(concat)
+        
+        #|t_seqs| = (bs, sq) 이므로, 마지막 차원을 하나 늘려야 함
+        t_seqs = torch.unsqueeze(t_seqs, -1)
+        #|t_seqs| = (bs, sq, 1)
+
+        cat_emb = torch.cat( [interaction_emb, t_seqs], -1)
+        
+        #lstm에서 받는 값을 한칸 늘려야 함
+
+        z, _ = self.lstm_layer( cat_emb ) #|z| = (bs, sq, self.hidden_size)
 
         y = self.out_layer(z) #|y| = (bs, sq, self.num_q) -> 통과시키면 확률값이 나옴
 

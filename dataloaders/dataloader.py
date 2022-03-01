@@ -17,6 +17,7 @@ class Answerloader(Dataset):
         self.q_seqs, self.r_seqs, self.t_seqs, \
             self.metas, self.u2idx, self.q2idx, \
                 self.u_list, self.q_list = self.preprocess()
+
         """
         self.q_seqs: question sequences
         self.r_seqs: response sequneces
@@ -34,7 +35,7 @@ class Answerloader(Dataset):
         self.len = len(self.q_seqs)
 
     def __getitem__(self, index):
-        return self.q_seqs[index], self.r_seqs[index] #self.t_seqs[index]
+        return self.q_seqs[index], self.r_seqs[index], self.t_seqs[index]
         #일단 시간 데이터는 따로 가공해서 넣기
 
     def __len__(self):
@@ -47,8 +48,23 @@ class Answerloader(Dataset):
         df = df[ (df["answer"] == 0).values + (df["answer"] == 1).values ]
 
         #시간을 datetime으로 변환
-        df["timestamp"] = pd.to_datetime(df["timestamp"]) #https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=wideeyed&logNo=221603462366
-        
+        #df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"]).astype(int) #https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=wideeyed&logNo=221603462366
+        """
+        timestamp:
+        1622585125000000000
+        ...
+        """
+        #timestamp를 uniform으로 만들기
+        def df_uniform( df_column ):
+            df_mean = df_column.mean()
+            df_std = df_column.std()
+
+            return ( df_column - df_mean ) / df_std
+
+        #timestamp를 uniform으로 변경함
+        df["timestamp"] = df_uniform( df["timestamp"] )
+
         #일단 모든 column을 대상으로 unique값과 sequence 값을 만들기
         u_list = np.unique( df["user_ID"].values ) #user ID
         q_list = np.unique( df["item_ID"].values ) #평가문항 ID
@@ -70,7 +86,10 @@ class Answerloader(Dataset):
             
             q_seq = np.array([q2idx[q] for q in df_u["item_ID"].values])
             r_seq = df_u["answer"].values
-            t_seq = df_u["timestamp"].values
+            #t_seq = df_u["timestamp"].values
+            
+            #정규화된 timestamp의 각 user별 표준편차값을 q_seq 갯수만큼 늘림
+            t_seq = [df_u["timestamp"].std() for i in range(len(q_seq))]
 
             q_seqs.append(q_seq)
             r_seqs.append(r_seq)

@@ -11,12 +11,17 @@ def collate_fn(batch, pad_val=-1):
     r_seqs = []
     qshft_seqs = []
     rshft_seqs = []
+    #t_seqs 추가
+    t_seqs = []
 
-    for q_seq, r_seq in batch:
+    #t_seqs 추가
+    for q_seq, r_seq, t_seq in batch:
         q_seqs.append(torch.Tensor(q_seq[:-1])) #총 데이터(M개) 중에서 앞의 첫번째 ~ (M-1), 갯수 M-1개
         r_seqs.append(torch.Tensor(r_seq[:-1])) #총 데이터(M개) 중에서 앞의 첫번째 ~ (M-1), 갯수 M-1개
         qshft_seqs.append(torch.Tensor(q_seq[1:])) #총 데이터(M개) 중에서 앞의 두번째 ~ M, 갯수 M-1개
         rshft_seqs.append(torch.Tensor(r_seq[1:])) #총 데이터(M개) 중에서 앞의 두번째 ~ M, 갯수 M-1개
+        #t_seqs 추가, t_seq는 같은 값으로 이루어져 있으므로 순서는 상관없음, 길이만 맞추면 됨
+        t_seqs.append(torch.Tensor(t_seq[:-1]))
 
     #가장 길이가 긴 seqs를 기준으로 길이를 맞추고, 길이를 맞추기 위해 그 자리에는 -1(pad_val)을 넣어줌
     q_seqs = pad_sequence(
@@ -31,6 +36,10 @@ def collate_fn(batch, pad_val=-1):
     rshft_seqs = pad_sequence(
         rshft_seqs, batch_first=True, padding_value=pad_val
     )
+    #t_seqs 추가
+    t_seqs = pad_sequence(
+        t_seqs, batch_first=True, padding_value=pad_val
+    )
 
     #각 원소가 -1이 아니면 Ture, -1이면 False로 값을 채움
     #이후 (q_seqs != pad_val)과 (qshft_seqs != pad_val)을 곱해줌 => 그러면 qshft가 -1이 하나 더 많을 것이므로, qshft 기준으로 True 갯수가 맞춰짐
@@ -38,11 +47,11 @@ def collate_fn(batch, pad_val=-1):
     mask_seqs = (q_seqs != pad_val) * (qshft_seqs != pad_val)
 
     #즉 전체를 qshft_seqs의 -1이 아닌 갯수만큼은 true(1)을 곱해서 원래 값을 부여하고, 아닌 것은 False(0)을 곱해서 0으로 만듦
-    q_seqs, r_seqs, qshft_seqs, rshft_seqs = \
+    q_seqs, r_seqs, qshft_seqs, rshft_seqs, t_seqs = \
         q_seqs * mask_seqs, r_seqs * mask_seqs, qshft_seqs * mask_seqs, \
-        rshft_seqs * mask_seqs
+        rshft_seqs * mask_seqs, t_seqs * mask_seqs
 
-    return q_seqs, r_seqs, qshft_seqs, rshft_seqs, mask_seqs
+    return q_seqs, r_seqs, qshft_seqs, rshft_seqs, t_seqs, mask_seqs
     #|q_seqs| = (batch_size, maximum_sequence_length_in_the_batch)
     #|r_seqs| = (batch_size, maximum_sequence_length_in_the_batch)
     #|qshft_seqs| = (batch_size, maximum_sequence_length_in_the_batch)
