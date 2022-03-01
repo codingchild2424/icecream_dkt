@@ -26,10 +26,11 @@ def main(config):
     trainer = get_trainers(model, optimizer, device, num_q, crit, config)
 
     #6. 훈련 및 score 계산
-    y_true_record, y_score_record = trainer.train(train_loader, test_loader)
+    y_true_record, y_score_record, highest_auc_score = trainer.train(train_loader, test_loader)
 
     #7. model 기록 저장 위치
-    model_path = './train_model_records/' + config.model_fn
+    model_path = './train_model_records/' + config.model_name + \
+         '_' + str(round(highest_auc_score, 4)) + '_' + config.model_fn
 
     #8. model 기록
     torch.save({

@@ -14,7 +14,7 @@ def define_argparser():
     p.add_argument('--learning_rate', type=int, default = 0.001)
 
     #model, opt, dataset, crit 선택
-    p.add_argument('--model_name', type=str, default='dkt')
+    p.add_argument('--model_name', type=str, default='time_dkt')
     p.add_argument('--optimizer', type=str, default='adam')
     p.add_argument('--crit', type=str, default = 'binary_cross_entropy')
 

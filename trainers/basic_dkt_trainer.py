@@ -6,7 +6,7 @@ from sklearn import metrics
 
 from tqdm import tqdm
 
-class DKT_trainer():
+class Basic_DKT_trainer():
 
     def __init__(self, model, optimizer, n_epochs, device, num_q, crit):
         self.model = model
@@ -25,16 +25,14 @@ class DKT_trainer():
 
         for data in tqdm(train_loader):
             self.model.train()
-            q_seqs, r_seqs, qshft_seqs, rshft_seqs, t_seqs, mask_seqs = data #collate에 정의된 데이터가 나옴
+            q_seqs, r_seqs, qshft_seqs, rshft_seqs, mask_seqs = data #collate에 정의된 데이터가 나옴
             q_seqs = q_seqs.to(self.device) #|q_seqs| = (bs, sq) -> [[58., 58., 58., -0., -0., -0., -0., ...], [58., 58., 58., -0., -0., -0., -0., ...]...]
             r_seqs = r_seqs.to(self.device) #|r_seqs| = (bs, sq) -> [[1., 1., 0., -0., -0., -0., -0., ...], [1., 1., 0., -0., -0., -0., -0., ...]...]
             qshft_seqs = qshft_seqs.to(self.device) #|qshft_seqs| = (bs, sq) -> [[58., 58., 58., -0., -0., -0., -0., ...], [58., 58., 58., -0., -0., -0., -0., ...]...]
             rshft_seqs = rshft_seqs.to(self.device) #|rshft_seqs| = (bs, sq) -> [[1., 1., 0., -0., -0., -0., -0., ...], [1., 1., 0., -0., -0., -0., -0., ...]...]
             mask_seqs = mask_seqs.to(self.device) #|mask_seqs| = (bs, sq) -> [[True,  True,  True,  ..., False, False, False], [True,  True,  True,  ..., False, False, False]..]
-            #t_seqs 추가
-            t_seqs = t_seqs.to(self.device)
 
-            y_hat = self.model( q_seqs.long(), r_seqs.long(), t_seqs ) #|y_hat| = (bs, sq, self.num_q) -> tensor([[[0.6938, 0.7605, ..., 0.7821], [0.8366, 0.6598,  ..., 0.8514],..)
+            y_hat = self.model( q_seqs.long(), r_seqs.long() ) #|y_hat| = (bs, sq, self.num_q) -> tensor([[[0.6938, 0.7605, ..., 0.7821], [0.8366, 0.6598,  ..., 0.8514],..)
             #=> 각 sq별로 문항의 확률값들이 담긴 벡터들이 나오게 됨
 
             #|qshft_seqs| = (bs, sq) -> tensor([[43., 43., 79.,  ..., -0., -0., -0.], [59., 15., 47.,  ..., -0., -0., -0.],...])
@@ -78,16 +76,14 @@ class DKT_trainer():
         with torch.no_grad():
             for data in tqdm(test_loader):
                 self.model.eval()
-                q_seqs, r_seqs, qshft_seqs, rshft_seqs, t_seqs, mask_seqs = data #collate에 정의된 데이터가 나옴
+                q_seqs, r_seqs, qshft_seqs, rshft_seqs, mask_seqs = data #collate에 정의된 데이터가 나옴
                 q_seqs = q_seqs.to(self.device)
                 r_seqs = r_seqs.to(self.device)
                 qshft_seqs = qshft_seqs.to(self.device)
                 rshft_seqs = rshft_seqs.to(self.device)
                 mask_seqs = mask_seqs.to(self.device)
-                #t_seqs 추가
-                t_seqs = t_seqs.to(self.device)
 
-                y_hat = self.model( q_seqs.long(), r_seqs.long(), t_seqs )
+                y_hat = self.model( q_seqs.long(), r_seqs.long() )
                 y_hat = (y_hat * one_hot(qshft_seqs.long(), self.num_q)).sum(-1)
 
                 y_hat = torch.masked_select(y_hat, mask_seqs)
@@ -142,4 +138,4 @@ class DKT_trainer():
         # 가장 최고의 모델 복구    
         self.model.load_state_dict(best_model)
 
-        return y_true_record, y_score_record
+        return y_true_record, y_score_record, highest_auc_score
