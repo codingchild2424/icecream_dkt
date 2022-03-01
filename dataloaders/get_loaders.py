@@ -15,6 +15,8 @@ def get_loaders(config):
         dataset = Basic_Answerloader()
         collate_func = basic_collate_fn
 
+    print("len(dataset): ", len(dataset))
+
     num_q = dataset.num_q
 
     train_size = int( len(dataset) * config.train_ratio )
